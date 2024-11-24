@@ -1,0 +1,19 @@
+body {
+  font-family: Arial, sans-serif;
+  text-align: center;
+  padding: 20px;
+}
+
+video {
+  width: 80%;
+  max-width: 640px;
+  height: auto;
+  margin-top: 20px;
+  border: 2px solid black;
+}
+
+button {
+  margin-top: 20px;
+  padding: 10px 20px;
+  font-size: 16px;
+}

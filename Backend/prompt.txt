@@ -1,0 +1,10 @@
+Give me output in JSON format only in the following structure:
+{
+    ai_output: string,
+    server_cmd: string ["nsfwcheck", "filescan", "webscan", "none"],
+}
+
+if user is asking for image scan for nsfw, use server command: nsfwcheck,
+if user is asking for file scan for file scan, use server command: filescan,
+if user is asking something related to website scan, use serve command: webscan,
+if nothing is related to it only give ai_output and set server command to none

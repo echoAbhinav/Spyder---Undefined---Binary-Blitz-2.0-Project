@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NSFWJS Video Chat</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <h1>NSFWJS Video Chat v2</h1>
+    <video id="video" autoplay></video>
+    <button id="startButton">Start Video</button>
+    <button id="reportButton">Report</button>
+
+    <!-- Include NSFWJS via CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="
+https://cdn.jsdelivr.net/npm/nsfwjs@4.1/dist/browser/nsfwjs.min.js
+"></script>
+
+    <div id="info"></div>
+
+    <div class="warn">
+      Sexy count:
+      <div id="sexy_count"></div>
+      <br />
+      Porn Count:
+      <div id="porn_count"></div>
+    </div>
+    <script src="script2_opt.js"></script>
+  </body>
+</html>
