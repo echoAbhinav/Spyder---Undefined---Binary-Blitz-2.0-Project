@@ -136,7 +136,7 @@ const NextAI = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:3000/scanFile",
+        "https://spyder-undefined-binary-blitz-2-0-project.onrender.com/scanFile",
         formData,
         {
           headers: {
@@ -180,16 +180,19 @@ const NextAI = () => {
 
       // Send message to Gemini API
       try {
-        const response = await fetch("http://localhost:3000/geminiChat", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            q: inputValue,
-            // token: localStorage.getItem("token"),
-          }), // Adjust based on your API requirements
-        });
+        const response = await fetch(
+          "https://spyder-undefined-binary-blitz-2-0-project.onrender.com/geminiChat",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              q: inputValue,
+              // token: localStorage.getItem("token"),
+            }), // Adjust based on your API requirements
+          }
+        );
 
         if (!response.ok) {
           throw new Error("Network response was not ok");
