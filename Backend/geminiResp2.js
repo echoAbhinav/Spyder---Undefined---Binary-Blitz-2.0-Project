@@ -1,6 +1,7 @@
 const axios = require("axios");
+require("dotenv").config();
 async function geminiResp2(q) {
-  const apiKey = "AIzaSyCO5AApLZPotZM2Vz6LazgB0uZO9wcRhO8";
+  const apiKey = process.env.GEM_API_KEY;
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`;
 
   //   const customInstructions = `Please provide output in **JSON format only**. Your response should follow this structure:
