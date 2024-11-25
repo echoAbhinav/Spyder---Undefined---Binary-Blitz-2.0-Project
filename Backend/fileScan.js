@@ -79,9 +79,9 @@
 const fs = require("fs");
 const axios = require("axios");
 const FormData = require("form-data");
+require("dotenv").config();
 
-const API_KEY =
-  "6d150389c3837ec6466cd508124b1a9080bef6273d190f5dcde53ee6699bce28";
+const API_KEY = process.env.VT_API_KEY;
 const VT_API_URL = "https://www.virustotal.com/api/v3/files";
 const VT_API_URL2 = "https://www.virustotal.com/api/v3/analyses";
 
@@ -112,7 +112,7 @@ async function uploadAndScanFile(filePath) {
       let scanReportResponse;
       let retries = 0;
 
-      while (retries < 30) {
+      while (retries < 3000) {
         scanReportResponse = await axios.get(`${VT_API_URL2}/${fileId}`, {
           headers: {
             "x-apikey": API_KEY,
@@ -147,7 +147,7 @@ async function uploadAndScanFile(filePath) {
 
         console.log("Scan in progress...");
         retries++;
-        if (retries < 30) {
+        if (retries < 3000) {
           await new Promise((resolve) => setTimeout(resolve, 5000)); // Wait for 5 seconds before retrying
         } else {
           console.log("Max retries reached. Scan may not be finished yet.");
