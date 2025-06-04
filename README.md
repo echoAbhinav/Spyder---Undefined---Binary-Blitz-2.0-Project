@@ -140,6 +140,9 @@ Spyder addresses several critical needs in today's digital environment:
 ## 👨‍💻 Contributors
 
 - Binary Blitz Team - Spyder Undefined
+-Yuvraj Udaywal
+-Ayush Swami
+-Bikesh Swami
 
 ## 📄 License
 
