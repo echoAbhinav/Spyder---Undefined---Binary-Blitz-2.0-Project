@@ -143,6 +143,7 @@ Spyder addresses several critical needs in today's digital environment:
 -Yuvraj Udaywal
 -Ayush Swami
 -Bikesh Swami
+-Abhinav Tiwari
 
 ## 📄 License
 
