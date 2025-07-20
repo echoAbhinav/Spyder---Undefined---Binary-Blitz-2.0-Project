@@ -4,54 +4,18 @@ import axios from "axios";
 export const UserContext = createContext(null);
 
 export const UserContextProvider = ({ children }) => {
-  const [user, setUser] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(true); // Set to true to skip authentication for now
+  const [loading, setLoading] = useState(false);
 
-  const serverUrl = "https://localhost:3000";
+  const serverUrl = "http://localhost:3000";
 
-  const isInitialRender = useRef(true);
+  // Removed authentication check for now since it's not implemented in the backend
   useEffect(() => {
-    if (isInitialRender.current) {
-      isInitialRender.current = false;
-
-      axios
-        .post(
-          `${serverUrl}/api/v1/auth/check`,
-          {},
-          {
-            withCredentials: true,
-          }
-        )
-        .then((response) => {
-          if (response.status === 200) {
-            console.log(response.data.user);
-            setUser(response.data.user);
-          }
-        })
-        .catch((error) => {
-          console.log("User is not authenticated:", error);
-        })
-        .finally(() => {
-          setLoading(false);
-        });
-    }
+    // Initialize any user context data here if needed
   }, []);
 
   const logout = () => {
-    axios
-      .post(
-        `${serverUrl}/api/auth/logout`,
-        {},
-        {
-          withCredentials: true,
-        }
-      )
-      .then(() => {
-        setUser(false);
-      })
-      .catch((error) => {
-        console.log("Error logging out:", error);
-      });
+    setUser(false);
   };
 
   return (
