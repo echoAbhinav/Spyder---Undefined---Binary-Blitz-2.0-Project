@@ -1,8 +1,7 @@
-const axios = require("axios");
 require("dotenv").config();
 async function geminiResp2(q) {
   const apiKey = process.env.GEM_API_KEY;
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
   //   const customInstructions = `Please provide output in **JSON format only**. Your response should follow this structure:
 
@@ -60,7 +59,7 @@ async function geminiResp2(q) {
   // `;
 
   const customInstructions =
-    "This is my file report and now you have to analyze it and given analyze it and find valuable insights from it and tell me if my file is safe or not. \n  ";
+    "You are analyzing a file security report. Provide a natural, conversational analysis of the file's safety. Respond in this JSON format (without markdown): {\"ai_output\": \"Your analysis here\", \"server_cmd\": \"none\"}. Be helpful and explain the findings in simple terms.";
   const query = customInstructions + JSON.stringify(q);
 
   console.log(q);
@@ -74,30 +73,49 @@ async function geminiResp2(q) {
   };
 
   try {
-    // Send request to the Gemini API
-    const response = await axios.post(url, requestBody, {
+    // Send request to the Gemini API using fetch
+    const response = await fetch(url, {
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
+      body: JSON.stringify(requestBody)
     });
 
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const responseData = await response.json();
+
     // Access the generated content
-    const generatedText = response.data.candidates[0]?.content?.parts[0]?.text;
+    const generatedText = responseData.candidates[0]?.content?.parts[0]?.text;
 
-    let hh = { ai_output: generatedText, server_cmd: "none" };
-
-    console.log(hh);
-
-    // const parsed = JSON.parse(hh);
-    // console.log(parsed.ai_output);
-    // console.log(parsed.server_cmd);
-    // console.log(generatedText);
-
-    if (generatedText) {
-      return hh;
-    } else {
+    if (!generatedText) {
       console.log("Generated text not found in response.");
-      return "Generated text not found.";
+      return { ai_output: "Sorry, I couldn't analyze the file properly. Please try again.", server_cmd: "none" };
+    }
+
+    // Try to parse as JSON, fallback to raw text
+    try {
+      let cleanText = generatedText.trim();
+      if (cleanText.startsWith('```json')) {
+        cleanText = cleanText.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+      } else if (cleanText.startsWith('```')) {
+        cleanText = cleanText.replace(/^```\s*/, '').replace(/\s*```$/, '');
+      }
+      
+      const parsed = JSON.parse(cleanText);
+      return {
+        ai_output: parsed.ai_output || generatedText,
+        server_cmd: parsed.server_cmd || "none"
+      };
+    } catch (parseError) {
+      console.log("Failed to parse JSON, using raw text");
+      return {
+        ai_output: generatedText.replace(/```json\s*|\s*```/g, '').trim(),
+        server_cmd: "none"
+      };
     }
   } catch (error) {
     console.error("Error generating response:", error.message);

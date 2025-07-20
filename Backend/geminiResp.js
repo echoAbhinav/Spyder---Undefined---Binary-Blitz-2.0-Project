@@ -1,104 +1,142 @@
-const axios = require("axios");
+/**
+ * Processes a query through the Gemini API and returns a formatted response
+ * @param {string} q - The user's query
+ * @returns {Object} - Formatted response with ai_output and server_cmd
+ */
 require("dotenv").config();
 
-async function geminiResp(q) {
-  const apiKey = process.env.GEM_API_KEY;
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`;
+const customInstructions = // Instructions for the Gemini AI model
+`You are a helpful AI assistant specializing in cybersecurity and general assistance. Respond naturally and conversationally, but also determine if the user needs specific services.
 
-  const customInstructions = `Please provide output in **JSON format only**. Your response should follow this structure:
-
+Your response should be in this JSON format (without markdown formatting):
 {
-    "ai_output": string,  // Explanation or response message
-    "server_cmd": string ["nsfwcheck", "filescan", "webscan", "none"]  // Command based on the context of the request
+    "ai_output": "Your natural, conversational response here",
+    "server_cmd": "none|filescan|webscan|nsfwcheck"
 }
 
-Your task is to respond to requests related to cyber security and website vulnerabilities. Follow these instructions:
+Guidelines:
+1. Respond naturally and conversationally like a helpful chatbot
+2. For file scanning requests, use "filescan" command
+3. For website security analysis, use "webscan" command  
+4. For NSFW content detection, use "nsfwcheck" command
+5. For general questions, use "none" command
 
-1. **For NSFW image requests**: If the user asks to analyze an image for NSFW content (e.g., explicit or inappropriate content), use the **"nsfwcheck"** server command.
+Examples:
+- User: "Hello, how are you?" → {"ai_output": "Hello! I'm doing great, thank you for asking. How can I help you today?", "server_cmd": "none"}
+- User: "Can you scan this file?" → {"ai_output": "I'd be happy to help you scan that file for security threats. Please upload the file and I'll analyze it for you.", "server_cmd": "filescan"}
+- User: "Is this website safe?" → {"ai_output": "I can help you analyze that website for security vulnerabilities. Just provide the URL and I'll scan it for potential threats.", "server_cmd": "webscan"}
 
-2. **For file scans**: If the user asks to scan a file for viruses, malware, or other threats, use the **"filescan"** server command.
+Remember: Respond naturally and conversationally, not like a formal API response.`;
 
-3. **For website scans**: If the user asks about scanning a website for vulnerabilities, security issues, or scanning URLs, use the **"webscan"** server command.
-
-4. **For unrelated requests**: If the request does not correspond to the actions above, set the **"server_cmd"** to **"none"**.
-
-Additionally, if the user asks for something specific (such as vulnerability assessment of a website), clearly define that the web scan is a security analysis. If Gemini does not have the capability to perform these tasks, make sure to clearly communicate that limitation. In such cases, you can still return an appropriate response, but the server_cmd should be set to "none".
-
-For example:
-- User: "Can you check if this website is secure?"
-  - Response: 
-    
-    {
-        "ai_output": "I can help you analyze website vulnerabilities. Let me scan the website.",
-        "server_cmd": "webscan"
+async function geminiResp(q) {
+    // Input validation
+    if (!q || typeof q !== 'string') {
+        console.error("Invalid query parameter");
+        return {
+            answer: {
+                ai_output: "Error: Invalid query. Please provide a valid text query.",
+                server_cmd: "none"
+            }
+        };
     }
-    
 
-- User: "Please analyze this image for NSFW content."
-  - Response: 
-    
-    {
-        "ai_output": "I will scan the image for NSFW content.",
-        "server_cmd": "nsfwcheck"
+    const apiKey = process.env.GEM_API_KEY;
+    if (!apiKey) {
+        console.error("API key not configured");
+        return {
+            answer: {
+                ai_output: "Error: API key not configured properly",
+                server_cmd: "none"
+            }
+        };
     }
-    
 
-- User: "Please scan this file for any viruses."
-  - Response: 
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
     
-    {
-        "ai_output": "I will scan the file for any security issues.",
-        "server_cmd": "filescan"
+    // Sanitize and prepare the query
+    const sanitizedQuery = q.trim();
+    const query = `${customInstructions}\nUser query: ${sanitizedQuery}`;
+    
+    const requestBody = {
+        contents: [{
+            parts: [{ text: query }]
+        }],
+        generationConfig: {
+            temperature: 0.7,
+            topK: 40,
+            topP: 0.95,
+            maxOutputTokens: 1024
+        }
+    };
+
+    try {
+        // Send request to the Gemini API using fetch
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(requestBody)
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const responseData = await response.json();
+        console.log("Raw Gemini response:", responseData); // Debug log
+
+        // Access the generated content
+        const generatedText = responseData.candidates[0]?.content?.parts[0]?.text;
+        if (!generatedText) {
+            throw new Error('No response received from Gemini API');
+        }
+
+        console.log("Generated text:", generatedText); // Debug log
+
+        // Try to parse the response as JSON
+        let parsed;
+        try {
+            // Clean the response text - remove markdown code blocks if present
+            let cleanText = generatedText.trim();
+            if (cleanText.startsWith('```json')) {
+                cleanText = cleanText.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+            } else if (cleanText.startsWith('```')) {
+                cleanText = cleanText.replace(/^```\s*/, '').replace(/\s*```$/, '');
+            }
+            
+            parsed = JSON.parse(cleanText);
+        } catch (parseError) {
+            console.error("Failed to parse Gemini response:", parseError);
+            // If parsing fails, create a formatted response from the raw text
+            const cleanText = generatedText.replace(/```json\s*|\s*```/g, '').trim();
+            return {
+                answer: {
+                    ai_output: cleanText,
+                    server_cmd: "none"
+                }
+            };
+        }
+        
+        // Validate and ensure the response has the correct structure
+        const formattedResponse = {
+            answer: {
+                ai_output: parsed.ai_output || parsed.text || generatedText,
+                server_cmd: parsed.server_cmd || "none"
+            }
+        };
+
+        console.log("Formatted response:", formattedResponse); // Debug log
+        return formattedResponse;
+    } catch (error) {
+        console.error("Error in Gemini request:", error);
+        return {
+            answer: {
+                ai_output: `I encountered an error: ${error.message}. Please try again.`,
+                server_cmd: "none"
+            }
+        };
     }
-    
-
-- User: "Tell me about cybersecurity."
-  - Response: 
-    
-    {
-        "ai_output": "Cybersecurity involves protecting systems, networks, and data from cyber attacks.",
-        "server_cmd": "none"
-    }
-    
-
-Please ensure that the JSON response always matches this format and that the server command corresponds to the task at hand.
-`;
-
-  const query = customInstructions + q;
-
-  const requestBody = {
-    contents: [
-      {
-        parts: [{ text: query }],
-      },
-    ],
-  };
-
-  try {
-    // Send request to the Gemini API
-    const response = await axios.post(url, requestBody, {
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-
-    // Access the generated content
-    const generatedText = response.data.candidates[0]?.content?.parts[0]?.text;
-    const parsed = JSON.parse(generatedText);
-    console.log(parsed.ai_output);
-    console.log(parsed.server_cmd);
-    // console.log(generatedText);
-
-    if (generatedText) {
-      return generatedText;
-    } else {
-      console.log("Generated text not found in response.");
-      return "Generated text not found.";
-    }
-  } catch (error) {
-    console.error("Error generating response:", error.message);
-    return "Failed to generate response";
-  }
 }
 
 module.exports = geminiResp;

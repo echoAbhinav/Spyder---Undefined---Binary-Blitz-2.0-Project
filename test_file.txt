@@ -1,0 +1,6 @@
+This is a test file for the file scanner.
+It contains some basic text content to test the AI analysis.
+
+The file scanner should be able to analyze this content and provide insights about the text.
+
+This is a harmless test file with no malicious content. 
